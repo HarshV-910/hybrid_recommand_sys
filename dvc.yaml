@@ -1,0 +1,48 @@
+stages:
+  # data_ingestion:
+  #   cmd: python src/data/data_ingestion.py
+  #   deps:
+  #   - src/data/data_ingestion.py
+  #   params:
+  #   - data_ingestion.test_size
+  #   outs:
+  #   - data/raw
+
+  data_cleaning:
+    cmd: python src/data/data_cleaning.py
+    deps:
+    - src/data/data_cleaning.py
+    - data/raw
+    params:
+    - data_cleaning.max_features
+    outs:
+    - data/processed
+    - models
+
+  # feature_engineering:
+  #   cmd: python src/features/feature_engineering.py
+  #   deps:
+  #   - src/features/feature_engineering.py
+  #   - data/processed
+  #   outs:
+  #   - data/FE
+
+  # model_building:
+  #   cmd: python src/models/model_building.py
+  #   deps:
+  #   - src/models/model_building.py
+  #   - data/FE
+  #   params:
+  #   - model_building.learning_rate
+  #   - model_building.n_estimators
+  #   outs:
+
+  # model_evaluation:
+  #   cmd: python src/visualization/model_evaluation.py
+  #   deps:
+  #   - data/FE
+  #   - models
+  #   - src/visualization/model_evaluation.py
+  #   metrics:
+  #   - reports/metrics/metrics.json:
+  #       cache: false

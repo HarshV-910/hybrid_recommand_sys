@@ -1,0 +1,28 @@
+schema: '2.0'
+stages:
+  data_cleaning:
+    cmd: python src/data/data_cleaning.py
+    deps:
+    - path: data/raw
+      hash: md5
+      md5: 4fa74c4771bad7d844bbad95e34087ca.dir
+      size: 1162325715
+      nfiles: 1503
+    - path: src/data/data_cleaning.py
+      hash: md5
+      md5: 0af3aa7ce86f853ef76402845c206c8d
+      size: 6966
+    params:
+      params.yaml:
+        data_cleaning.max_features: 85
+    outs:
+    - path: data/processed
+      hash: md5
+      md5: 0afeefcecdc7d68ac16be8578593c30b.dir
+      size: 10983647
+      nfiles: 2
+    - path: models
+      hash: md5
+      md5: ce82284fb36ee3fa2d3764741ce94b00.dir
+      size: 999842
+      nfiles: 2

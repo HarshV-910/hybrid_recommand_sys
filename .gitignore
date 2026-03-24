@@ -89,3 +89,5 @@ target/
 .mypy_cache/
 
 /hrs_env/
+/models/
+/models
