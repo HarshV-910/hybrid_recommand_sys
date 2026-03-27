@@ -1,29 +1,43 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+from numpy import load
 import joblib
 from scipy.sparse import load_npz
-from src.data.data_cleaning import recommand
-from category_encoders.count import CountEncoder
+from src.features.content_sys import content_based_recommand
+from src.features.collaborative_sys import collaborative_recommand
 
 # Load data
 transformed_data = load_npz('data/processed/df_transformed.npz')
 # transformer = joblib.load('models/transformer.joblib')
 df_song = pd.read_csv('data/raw/Music_Info.csv')
-song_names = joblib.load('models/song_names.joblib')
+df_user = pd.read_csv('data/raw/User_Listening_History.csv')
+filtered_song_df = pd.read_csv('data/processed/collab_filtered.csv')
+track_ids = np.load('models/track_ids.npy', allow_pickle=True)
+interaction_matrix = load_npz('data/processed/interaction_matrix.npz')
+
+# song_names = joblib.load('models/song_names.joblib')
 
 st.title("Music Recommendation System")
 st.write("#### Welcome to the Music Recommendation System! Please enter your preferences to get personalized music recommendations.")
 st.write("Here we have some like 50683 songs")
 
-# User inputs
-song_name = st.selectbox('Select song', song_names)
+song_artist = df_song['name'].astype(str) + " by " + df_song['artist'].astype(str)
+song_artist = song_artist.tolist()
+
+song_name = st.selectbox('Select a song', song_artist)
+song_name, artist_name = song_name.split(" by ")
 k = st.selectbox('Select number of recommendations', [5, 10, 15, 20], index=1)
+
+recommandation_type = st.selectbox('Select recommendation type', ['Content-Based', 'Collaborative-Based'])
 
 # Get recommendations
 if st.button('Get Recommendations'):
     try:
-        recommendations = recommand(song_name, df_song, transformed_data, k)
+        if recommandation_type == 'Collaborative-Based':
+            recommendations = collaborative_recommand(song_name,artist_name,track_ids,df_song, interaction_matrix, k)
+        else:
+            recommendations = content_based_recommand(song_name, df_song, transformed_data, k)
         # st.write(recommendations)
         st.write("#### Recommended Songs:")
         

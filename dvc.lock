@@ -1,7 +1,7 @@
 schema: '2.0'
 stages:
   data_cleaning:
-    cmd: python src/data/data_cleaning.py
+    cmd: hrs_env/bin/python src/data/data_cleaning.py
     deps:
     - path: data/raw
       hash: md5
@@ -10,19 +10,43 @@ stages:
       nfiles: 1503
     - path: src/data/data_cleaning.py
       hash: md5
-      md5: 0af3aa7ce86f853ef76402845c206c8d
-      size: 6966
+      md5: cf025973b667eec67bb85aad1170e955
+      size: 9228
     params:
       params.yaml:
         data_cleaning.max_features: 85
     outs:
     - path: data/processed
       hash: md5
-      md5: 0afeefcecdc7d68ac16be8578593c30b.dir
-      size: 10983647
-      nfiles: 2
+      md5: 941bd2751b3ce7d3c51a1a37ac6a7ac6.dir
+      size: 52332116
+      nfiles: 4
     - path: models
       hash: md5
-      md5: ce82284fb36ee3fa2d3764741ce94b00.dir
-      size: 999842
-      nfiles: 2
+      md5: d4aaee3fd8a0987214d7816ea64c1971.dir
+      size: 1646668
+      nfiles: 3
+  content_sys:
+    cmd: hrs_env/bin/python src/features/content_sys.py
+    deps:
+    - path: data/processed
+      hash: md5
+      md5: 941bd2751b3ce7d3c51a1a37ac6a7ac6.dir
+      size: 52332116
+      nfiles: 4
+    - path: src/features/content_sys.py
+      hash: md5
+      md5: 502049106efbf951bdf2549168b4ce5a
+      size: 2032
+  collaborative_sys:
+    cmd: hrs_env/bin/python src/features/collaborative_sys.py
+    deps:
+    - path: data/processed
+      hash: md5
+      md5: 941bd2751b3ce7d3c51a1a37ac6a7ac6.dir
+      size: 52332116
+      nfiles: 4
+    - path: src/features/collaborative_sys.py
+      hash: md5
+      md5: 5cde3a50a38e1dcb74edfd560ae09cc9
+      size: 3339

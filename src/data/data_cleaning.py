@@ -5,11 +5,12 @@ import numpy as np
 from category_encoders.count import CountEncoder
 from sklearn.preprocessing import OneHotEncoder,MinMaxScaler,StandardScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.compose import ColumnTransformer
 import yaml
 from scipy.sparse import save_npz
 import joblib
+import dask.dataframe as dd
+from scipy.sparse import csr_matrix
 
 # -----------------------------------------------------------------------------
 # Logging Configuration
@@ -57,23 +58,6 @@ def load_params(param_path: str) -> int:
         logger.error(f"Error parsing parameters from {param_path}: {e}")
         raise
 
-# -----------------------------------------------------------------------------
-# Recommandation Functions
-# -----------------------------------------------------------------------------
-
-def recommand(song_name, df_song, df_transformed, k=10):
-  song_row = df_song[df_song['name'] == song_name]
-  if song_row.empty:
-    print(f"Song '{song_name}' not found in the dataset.")
-  else:
-    song_index = song_row.index[0]
-    song_input = df_transformed[song_index].reshape(1, -1)
-    similarity_score = cosine_similarity(song_input,df_transformed)
-    top_k_indices = np.argsort(similarity_score.ravel())[-k-1:][::-1]
-    top_k_songs = df_song.iloc[top_k_indices]
-    top_k_list = top_k_songs[['name','artist','spotify_preview_url']].reset_index(drop=True)
-    return top_k_list
-# recommand('Why Wait',df_song=df_song,df_transformed=df_transformed,k=10) example of recommandation function usage
 
 # -----------------------------------------------------------------------------
 # Data Processing Functions
@@ -90,6 +74,8 @@ def clean(df,col):
         df['tags'] = df['tags'].fillna('no_tag')
         # converting some columns in lower case
         df['artist'] = df['artist'].str.lower()
+        # convert year to category for frequency encoding
+        df['year'] = df['year'].astype('category')
         logger.info("Data cleaning completed successfully.")
         return df
     except Exception as e:
@@ -124,6 +110,57 @@ def transform_data(df,freq_encode_col,ohe_cols,tfidf_col,standard_encode_col,min
         logger.error(f"Data transformation failed: {e}")
         raise
 
+# -----------------------------------------------------------------------------
+# interaction matrix create Function
+# -----------------------------------------------------------------------------
+
+def create_interaction_matrix(df:dd.DataFrame, track_ids) -> csr_matrix:
+    logger.info("Starting interaction matrix creation.")
+    # if Dask DF, convert to pandas to avoid partial aggregation/categorial matrix issues
+    if isinstance(df, dd.DataFrame):
+        df = df.compute()
+
+    # ensure playcount is numeric
+    df['playcount'] = df['playcount'].astype(np.float64)
+
+    # limit to non-zero playcount rows (if any)
+    df = df[df['playcount'] > 0]
+
+    # categories for track and user codes
+    df['user_id'] = df['user_id'].astype('category')
+    df['track_id'] = df['track_id'].astype('category')
+
+    user_ids = df['user_id'].cat.categories.values
+    track_ids = df['track_id'].cat.categories.values
+    np.save('models/track_ids.npy', track_ids, allow_pickle=True)
+
+    df['user_idx'] = df['user_id'].cat.codes
+    df['track_idx'] = df['track_id'].cat.codes
+
+    interaction_array = df.groupby(['track_idx', 'user_idx'])['playcount'].sum().reset_index()
+
+    row_indices = interaction_array['track_idx'].astype(np.int64).values
+    col_indices = interaction_array['user_idx'].astype(np.int64).values
+    values = interaction_array['playcount'].astype(np.float64).values
+
+    sparse_matrix = csr_matrix((values, (row_indices, col_indices)), shape=(len(track_ids), len(user_ids)))
+    save_npz('data/processed/interaction_matrix.npz', sparse_matrix)
+
+    logger.info("Interaction matrix created successfully.")
+    return sparse_matrix
+
+# -----------------------------------------------------------------------------
+# song data filter Function
+# -----------------------------------------------------------------------------
+
+def filter_song_data(df_song: pd.DataFrame, track_ids:list) -> pd.DataFrame:
+   # filtering the song data to only include songs that are present in the interaction matrix
+   logger.info("Starting song data filtering.")
+   filtered_df = df_song[df_song['track_id'].isin(track_ids)]
+   filtered_df.reset_index(drop=True,inplace=True)
+   filtered_df.to_csv('data/processed/collab_filtered.csv', index=False)
+   logger.info("Filtered song data saved.")
+   return filtered_df
 
 # -----------------------------------------------------------------------------
 # Main Execution Function
@@ -136,16 +173,32 @@ def main():
         data_path = os.path.join("data", "raw")
         processed_path = os.path.join("data", "processed")
         os.makedirs(processed_path, exist_ok=True)
+        os.makedirs('models', exist_ok=True)
 
         # Load datasets
-        data_file = os.path.join(data_path, "Music_Info.csv")
-        df_song = pd.read_csv(data_file)
+        songdata_file = os.path.join(data_path, "Music_Info.csv")
+        userdata_file = os.path.join(data_path, "User_Listening_History.csv")
+        user_df = dd.read_csv(userdata_file)
+        df_song = pd.read_csv(songdata_file)
+        # song_df = pd.read_csv(songdata_file, usecols=['track_id','name','artist','spotify_preview_url'])
+        # user_df = pd.read_csv(userdata_file)
         logger.info("Dataset loaded successfully.")
+
+# -------- FOR COLLABORATIVE BASED RECOMMENDER SYSTEM ---------
+
+        # getting unique track ids
+        unique_track_ids = user_df.loc[:,'track_id'].unique().compute()
+        unique_track_ids = unique_track_ids.tolist()
+
+        filter_song_data(df_song, unique_track_ids)
+        create_interaction_matrix(user_df, unique_track_ids)
+
+# -------- FOR CONTENT BASED RECOMMENDER SYSTEM --------
+
         song_names = df_song['name'].unique().tolist()
 
         col_to_clean = ['spotify_id','track_id','genre','name','spotify_preview_url']
         df_cleaned = clean(df_song,col_to_clean)
-
 
         freq_encode_col = ['year'] # range : 0 to 1
         ohe_cols = ['artist','time_signature','key']
@@ -161,12 +214,6 @@ def main():
         df_cleaned.to_csv(os.path.join(processed_path, "df_cleaned.csv"), index=False)
         joblib.dump(song_names, "models/song_names.joblib")
         logger.info(f"Cleaned & Transformed data saved to {processed_path}")
-
-
-
-
-
-        logger.info(f"Transformed data saved to {processed_path}")
 
     except Exception as e:
         logger.critical(f"Data preprocessing pipeline failed: {e}")
