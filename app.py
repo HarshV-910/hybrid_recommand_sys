@@ -6,6 +6,7 @@ import joblib
 from scipy.sparse import load_npz
 from src.features.content_sys import content_based_recommand
 from src.features.collaborative_sys import collaborative_recommand
+from src.features.hybrid_sys import HybridRecommender
 
 # Load data
 transformed_data = load_npz('data/processed/df_transformed.npz')
@@ -29,13 +30,17 @@ song_name = st.selectbox('Select a song', song_artist)
 song_name, artist_name = song_name.split(" by ")
 k = st.selectbox('Select number of recommendations', [5, 10, 15, 20], index=1)
 
-recommandation_type = st.selectbox('Select recommendation type', ['Content-Based', 'Collaborative-Based'])
+recommandation_type = st.selectbox('Select recommendation type', ['Content-Based', 'Collaborative-Based', 'Hybrid'])
 
 # Get recommendations
 if st.button('Get Recommendations'):
     try:
         if recommandation_type == 'Collaborative-Based':
             recommendations = collaborative_recommand(song_name,artist_name,track_ids,df_song, interaction_matrix, k)
+        elif recommandation_type == 'Hybrid':
+            # Use full song corpus for content similarity and align with track_ids for collaborative mixing
+            hybrid_recommender = HybridRecommender(song_name, artist_name, df_song, transformed_data, track_ids, interaction_matrix, k)
+            recommendations = hybrid_recommender.get_recommendations()
         else:
             recommendations = content_based_recommand(song_name, df_song, transformed_data, k)
         # st.write(recommendations)

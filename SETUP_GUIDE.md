@@ -44,7 +44,7 @@ pip install streamlit google-api-python-client google-auth-oauthlib python-doten
 ### Step 3: Configure .env File ✓ (Already Done)
 The `.env` file already has your API key:
 ```env
-YOUTUBE_API_KEY=AIzaSyD9_E7Lekg7HjneleI287bpWWxMdTgf5Gw
+YOUTUBE_API_KEY=Your_API_Key_Here
 ```
 
 ## Running the App

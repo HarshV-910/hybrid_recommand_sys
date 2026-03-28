@@ -1,6 +1,7 @@
 import os
 import logging
 import numpy as np
+import os
 from sklearn.metrics.pairwise import cosine_similarity
 
 # -----------------------------------------------------------------------------
@@ -52,3 +53,6 @@ def content_based_recommand(song_name, df_song, df_transformed, k=10):
         
 # recommand('Why Wait',df_song=df_song,df_transformed=df_transformed,k=10) example of recommandation function usage
 
+from pathlib import Path
+os.makedirs('.dvc_markers', exist_ok=True)
+Path(".dvc_markers/stage_content.done").touch()

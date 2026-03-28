@@ -3,29 +3,50 @@ stages:
   data_cleaning:
     cmd: hrs_env/bin/python src/data/data_cleaning.py
     deps:
-    - path: data/raw
+    - path: data/raw/Music_Info.csv
       hash: md5
-      md5: 4fa74c4771bad7d844bbad95e34087ca.dir
-      size: 1162325715
-      nfiles: 1503
+      md5: e63b74919a3cdada5c804df4666391c9
+      size: 14985870
+    - path: data/raw/User_Listening_History.csv
+      hash: md5
+      md5: 3a12e713844195171c7040c051d6d4ae
+      size: 602515573
     - path: src/data/data_cleaning.py
       hash: md5
-      md5: cf025973b667eec67bb85aad1170e955
-      size: 9228
+      md5: 5816d9b652da4e56c9d14c8ab93d0466
+      size: 9154
     params:
       params.yaml:
         data_cleaning.max_features: 85
     outs:
-    - path: data/processed
+    - path: data/processed/collab_filtered.csv
       hash: md5
-      md5: 941bd2751b3ce7d3c51a1a37ac6a7ac6.dir
-      size: 52332116
-      nfiles: 4
-    - path: models
+      md5: 7c8dde4c3c639befb11820374727fe05
+      size: 9041911
+    - path: data/processed/df_cleaned.csv
       hash: md5
-      md5: d4aaee3fd8a0987214d7816ea64c1971.dir
-      size: 1646668
-      nfiles: 3
+      md5: db13d72918244501739db28895d9a5a1
+      size: 6460077
+    - path: data/processed/df_transformed.npz
+      hash: md5
+      md5: 021aadc9870a8c0c56a72c6e945a16a6
+      size: 4518775
+    - path: data/processed/interaction_matrix.npz
+      hash: md5
+      md5: d5f5b2bc5d7f6cd6e6d21c73a39da5fc
+      size: 32311353
+    - path: models/song_names.joblib
+      hash: md5
+      md5: 012a79da406574c8f4d58ba609065af2
+      size: 863893
+    - path: models/track_ids.npy
+      hash: md5
+      md5: 4a52e4cb6bae6b0126c1344dac7c7686
+      size: 640058
+    - path: models/transformer.joblib
+      hash: md5
+      md5: c48f2421fc4fe82cbe9ae9f12a2b9a67
+      size: 142717
   content_sys:
     cmd: hrs_env/bin/python src/features/content_sys.py
     deps:
@@ -36,8 +57,13 @@ stages:
       nfiles: 4
     - path: src/features/content_sys.py
       hash: md5
-      md5: 502049106efbf951bdf2549168b4ce5a
-      size: 2032
+      md5: 3d70ec5e184d3c4b72c399968da652b2
+      size: 2157
+    outs:
+    - path: .dvc_markers/stage_content.done
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
   collaborative_sys:
     cmd: hrs_env/bin/python src/features/collaborative_sys.py
     deps:
@@ -48,5 +74,33 @@ stages:
       nfiles: 4
     - path: src/features/collaborative_sys.py
       hash: md5
-      md5: 5cde3a50a38e1dcb74edfd560ae09cc9
-      size: 3339
+      md5: fe0b5392613340e3473a61141436c942
+      size: 2599
+    outs:
+    - path: .dvc_markers/stage_collab.done
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+  hybrid_sys:
+    cmd: hrs_env/bin/python src/features/hybrid_sys.py
+    deps:
+    - path: .dvc_markers/stage_collab.done
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+    - path: .dvc_markers/stage_content.done
+      hash: md5
+      md5: d41d8cd98f00b204e9800998ecf8427e
+      size: 0
+    - path: src/features/collaborative_sys.py
+      hash: md5
+      md5: fe0b5392613340e3473a61141436c942
+      size: 2599
+    - path: src/features/content_sys.py
+      hash: md5
+      md5: 3d70ec5e184d3c4b72c399968da652b2
+      size: 2157
+    - path: src/features/hybrid_sys.py
+      hash: md5
+      md5: 92507dfc389213cc788c86e6acb5ef18
+      size: 3452

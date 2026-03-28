@@ -4,28 +4,43 @@ stages:
     cmd: hrs_env/bin/python src/data/data_cleaning.py
     deps:
     - src/data/data_cleaning.py
-    - data/raw
+    - data/raw/Music_Info.csv
+    - data/raw/User_Listening_History.csv
     params:
     - data_cleaning.max_features
     outs:
-    - data/processed
-    - models
+    - data/processed/collab_filtered.csv
+    - data/processed/df_cleaned.csv
+    - data/processed/df_transformed.npz
+    - data/processed/interaction_matrix.npz
+    - models/song_names.joblib
+    - models/track_ids.npy
+    - models/transformer.joblib
 
   content_sys:
     cmd: hrs_env/bin/python src/features/content_sys.py
     deps:
     - src/features/content_sys.py
     - data/processed
-    # outs:
-    # - data/FE
+    outs:
+    - .dvc_markers/stage_content.done
 
   collaborative_sys:
     cmd: hrs_env/bin/python src/features/collaborative_sys.py
     deps:
     - src/features/collaborative_sys.py
     - data/processed
-    # outs:
-    # - data/FE
+    outs:
+    - .dvc_markers/stage_collab.done
+
+  hybrid_sys:
+    cmd: hrs_env/bin/python src/features/hybrid_sys.py
+    deps:
+    - src/features/hybrid_sys.py
+    - src/features/content_sys.py
+    - src/features/collaborative_sys.py
+    - .dvc_markers/stage_content.done
+    - .dvc_markers/stage_collab.done
 
   # model_building:
   #   cmd: python src/models/model_building.py

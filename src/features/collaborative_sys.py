@@ -70,3 +70,6 @@ def collaborative_recommand(song_name, artist_name, track_ids, df_song, interact
   return top_k_song
 
 # collaborative_recommand(song_name='Mr. Brightside', user_data=df_user, df_song=df_song, interaction_matrix=sparse_matrix)
+from pathlib import Path
+os.makedirs('.dvc_markers', exist_ok=True)
+Path(".dvc_markers/stage_collab.done").touch()
