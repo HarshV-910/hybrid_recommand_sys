@@ -1,12 +1,34 @@
 import numpy as np
 import pandas as pd
 from sklearn.metrics.pairwise import cosine_similarity
-# from .collaborative_sys import collaborative_recommand
-# from .content_sys import content_based_recommand
-# from scipy.sparse import load_npz
+import os
+import logging
 
+logger = logging.getLogger('hybrid_recommender_logger')
+logger.setLevel(logging.DEBUG)
+
+# Console handler
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.DEBUG)
+
+# Ensure log directory exists
+os.makedirs('reports/logs', exist_ok=True)
+
+# File handler
+file_handler = logging.FileHandler('reports/logs/hybrid_sys.log')
+file_handler.setLevel(logging.DEBUG)
+
+# Formatter
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+console_handler.setFormatter(formatter)
+file_handler.setFormatter(formatter)
+
+# Adding handlers to logger
+logger.addHandler(console_handler)
+logger.addHandler(file_handler)
 
 class HybridRecommender:
+
     def __init__(self,
                  song_name: str,
                  artist_name: str,
@@ -14,15 +36,16 @@ class HybridRecommender:
                  transformed_matrix: np.ndarray,
                  track_ids: np.ndarray,
                  interaction_matrix: np.ndarray,
+                 weight_collaborative: float,
                  no_of_recommendations: int = 10,
-                 weight_collaborative: float = 0.3, # type: ignore
                  weight_content: float = 0.8):
+        logger.info("Initializing HybridRecommender with song: '%s' by '%s'", song_name, artist_name)
     
         self.song_name = song_name
         self.artist_name = artist_name
         self.no_of_recommendations = no_of_recommendations
-        self.weight_collaborative = weight_collaborative
         self.weight_content = weight_content
+        self.weight_collaborative = weight_collaborative  # 1-weight_content
         self.df_songs = df_songs
         self.transformed_matrix = transformed_matrix
         self.track_ids = track_ids
@@ -30,6 +53,7 @@ class HybridRecommender:
         
     
     def content_based_similarity(self,song_name, artist_name, df_songs, transformed_matrix):
+        logger.info("Calculating content-based similarity for song: '%s' by '%s'", song_name, artist_name)
         song_row = df_songs.loc[(df_songs['name'] == song_name) & (df_songs['artist'] == artist_name)]
         song_index = song_row.index[0]
         input_vector = transformed_matrix[song_index].reshape(1, -1)
@@ -37,25 +61,34 @@ class HybridRecommender:
         return content_similarity_score
     
     def collaborative_based_similarity(self,song_name, artist_name, track_ids, df_songs, interaction_matrix):
-
+        logger.info("Calculating collaborative-based similarity for song: '%s' by '%s'", song_name, artist_name)
         song_row = df_songs.loc[(df_songs['name'] == song_name) & (df_songs['artist'] == artist_name)]
         input_track_id = song_row['track_id'].values.item()
-        idx = np.where(track_ids == input_track_id)[0].item()
+        idx_matches = np.where(track_ids == input_track_id)[0]
+        if len(idx_matches) == 0:
+            # If song not in collaborative data, return zeros
+            logger.warning("Song: '%s' by '%s' not found in collaborative data.", song_name, artist_name)
+            return np.zeros(interaction_matrix.shape[0])
+        idx = idx_matches[0]
         input_array = interaction_matrix[idx]
         collab_similarity_score = cosine_similarity(input_array, interaction_matrix).ravel()
+        logger.info("Collaborative-based similarity calculated for song: '%s' by '%s'", song_name, artist_name)
         return collab_similarity_score
     
     def normalize_scores(self, scores):
+        logger.info("Normalizing similarity scores.")
         if np.max(scores) - np.min(scores) == 0:
             return np.zeros_like(scores)
         normalized_scores = (scores - np.min(scores)) / (np.max(scores) - np.min(scores))
         return normalized_scores
     
     def weighted_combination(self, content_scores, collab_scores):
+        logger.info("Combining content and collaborative similarity scores.")
         weighted_scores = (self.weight_content * content_scores) + (self.weight_collaborative * collab_scores)
         return weighted_scores
     
     def get_recommendations(self):
+        logger.info("Generating hybrid recommendations.")
         # content scores over all songs passed in df_songs / transformed_matrix
         content_scores_full = self.content_based_similarity(self.song_name, self.artist_name, self.df_songs, self.transformed_matrix)
 
@@ -87,6 +120,7 @@ class HybridRecommender:
         # preserve ranking order in result
         recommended_songs = self.df_songs[self.df_songs['track_id'].isin(recommended_track_ids)]
         recommended_songs = recommended_songs.set_index('track_id').loc[recommended_track_ids].reset_index()
+        logger.info("Hybrid recommendations generated successfully.")
 
         return recommended_songs
     

@@ -45,6 +45,10 @@ def collaborative_recommand(song_name, artist_name, track_ids, df_song, interact
   input_track_id = song_row['track_id'].values.item()
   idx_matches = np.where(track_ids == input_track_id)[0]
 
+  if len(idx_matches) == 0:
+    logger.warning(f"Song track_id not found in track_ids for collaborative recommendation: {input_track_id}")
+    return pd.DataFrame(columns=df_song.columns)
+
   ind = idx_matches[0]
   input_array = interaction_matrix[ind]
 

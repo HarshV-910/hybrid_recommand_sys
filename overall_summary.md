@@ -128,3 +128,23 @@ This document outlines the complete pipeline for the hybrid music recommendation
 - **Streamlit App**: Loads all datasets and provides UI for selecting recommendation type.
 
 This flow ensures scalable, accurate recommendations by leveraging both song features and user behavior.
+
+
+
+
+--------------------------------------------------
+=====================================================
+--------------------------------------------------
+
+
+dynamic -> increase collab weight
+personalized -> increase content weight
+
+we have data about 50k songs and with user data we have just 30k songs. so we will also used 20k songs by 30k -> all type of recommendations and 20k -> content based only
+
+for new user -> content based
+for old user -> hybrid
+
+streamlit run every time whole script when it get change in option like button. so it takes too much time to load dataset. -> we store dataset one time during first time loading.
+
+metrics for evaluation: precision & recall but here we not using becausing we not have labelled data.
