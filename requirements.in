@@ -1,0 +1,12 @@
+pandas
+scikit-learn
+dvc[s3]
+mlflow
+streamlit
+fastapi
+uvicorn
+awscli
+dvc
+dask[complete]
+numpy
+joblib

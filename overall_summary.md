@@ -161,7 +161,15 @@ s3.bucket for dvc remote, dvc push,
 commands:{
   aws configure
   dvc remote add -d myremote s3://hybrid-recsys-remote-bkt
-  dvc push  
+  dvc push
+  git add/commit/push
+}
+
+extra command(avoid version conflict):{
+  pip install pip-tools
+  touch requirements.in -> add libraries names in this file
+  pip-compile requirements.in
+  pip install -r requirements.txt
 }
 
 CD :
