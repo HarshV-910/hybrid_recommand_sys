@@ -615,6 +615,6 @@ zict==3.0.0
     # via distributed
 zipp==3.23.0
     # via importlib-metadata
-
+pytest
 # The following packages are considered to be unsafe in a requirements file:
 # setuptools

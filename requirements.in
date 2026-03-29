@@ -10,3 +10,4 @@ dvc
 dask[complete]
 numpy
 joblib
+pytest
