@@ -14,7 +14,7 @@ async-timeout==5.0.1
 asyncssh==2.22.0
 atpublic==7.0.0
 attrs==26.1.0
-awscli==1.44.68
+awscli~=1.40.0
 billiard==4.2.4
 blinker==1.9.0
 bokeh==3.9.0
