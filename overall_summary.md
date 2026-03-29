@@ -129,22 +129,46 @@ This document outlines the complete pipeline for the hybrid music recommendation
 
 This flow ensures scalable, accurate recommendations by leveraging both song features and user behavior.
 
+## 6. Additional Insights and Optimizations
+
+### Recommendation Strategies
+- **Dynamic Recommendations**: To make suggestions more dynamic and based on what others like, we increase the collaborative weight (focus more on user behavior patterns).
+- **Personalized Recommendations**: For more personalized results based on the song's features, we increase the content weight (focus more on the music's characteristics).
+
+### Handling Song Data
+- We have information for about 50,000 songs in total. However, only 30,000 of these have user listening data. This means:
+  - The 30,000 songs with user data can use all types of recommendations (content-based, collaborative, and hybrid).
+  - The remaining 20,000 songs (without user data) can only use content-based recommendations, as there's no collaborative information available.
+
+### User-Based Approach
+- **New Users**: Since they don't have listening history, we use content-based recommendations to suggest songs similar to their selected one.
+- **Existing Users**: For users with past listening data, we use the hybrid approach to combine both content and collaborative methods for better results.
+
+### Streamlit Performance
+- Streamlit reruns the entire script every time a user changes an option (like selecting a song or clicking a button), which can be slow if loading large datasets each time.
+- To fix this, we load and store the datasets only once during the first run, using caching to keep them in memory for faster access.
+
+### Evaluation Metrics
+- Common metrics for evaluating recommendation systems are precision (how many recommended items are relevant) and recall (how many relevant items are recommended).
+- However, we don't use these here because we don't have labeled data (ground truth about what users actually like or dislike). Instead, we rely on the system's logic and user feedback for improvements.
+
+==================================================
+==================================================
 
 
+CI : (dvc pipeline -> github action runner -> test)
+s3.bucket for dvc remote, dvc push, 
+commands:{
+  aws configure
+  dvc remote add -d myremote s3://hybrid-recsys-remote-bkt
+  dvc push  
+}
 
---------------------------------------------------
-=====================================================
---------------------------------------------------
+CD :
+all code -> docker img -> streamlit app on AWS ECR
 
+pull docker img -> run app on single EC2(docker install,pull img from ECR, container runn, live app)
 
-dynamic -> increase collab weight
-personalized -> increase content weight
-
-we have data about 50k songs and with user data we have just 30k songs. so we will also used 20k songs by 30k -> all type of recommendations and 20k -> content based only
-
-for new user -> content based
-for old user -> hybrid
-
-streamlit run every time whole script when it get change in option like button. so it takes too much time to load dataset. -> we store dataset one time during first time loading.
-
-metrics for evaluation: precision & recall but here we not using becausing we not have labelled data.
+code deploy : blue green deployment
+1. Auto Scaling Group by launch template (2 to 5 EC2) -> code deployment application -> deployment grp -> start deployment
+2. some change in streamlit app
