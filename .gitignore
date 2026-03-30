@@ -86,11 +86,11 @@ __pycache__/
 
 
 # exclude data from source control by default
-/data/
 /hrs_env/
 /models/
 /keys.txt
 /reports/
+/data/
 
 # DotEnv configuration
 .env
