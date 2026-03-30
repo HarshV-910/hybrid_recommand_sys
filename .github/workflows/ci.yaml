@@ -72,13 +72,23 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Build, tag and Push Docker Image to ECR
-        env:
-          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI}}
-          IMAGE_TAG: latest
-        run: |
-          docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
-          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY_URI }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          driver: docker-container  # Fixes the cache export error
+
+      # - name: Build, tag and Push Docker Image to ECR
+      #   env:
+      #     REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #     REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI}}
+      #     IMAGE_TAG: latest
+      #   run: |
+      #     docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+      #     docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
       
       # - name: Login to AWS ECR
       #   id: login-ecr
@@ -92,7 +102,7 @@ jobs:
       #     tags: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY_URI }}:latest
       #     cache-from: type=gha
       #     cache-to: type=gha,mode=max
+      #     driver: docker-container  # Fixes the cache export error
 ########################################
 
-# 
-          
+#
