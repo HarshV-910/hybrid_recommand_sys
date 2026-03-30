@@ -89,7 +89,7 @@ target/
 /hrs_env/
 /models/
 /keys.txt
-/reports/
+/reports
 /data/
 
 # DotEnv configuration
