@@ -76,10 +76,11 @@ target/
 .ipynb_checkpoints/
 
 # exclude data from source control by default
-data/*
+data/raw/User_Listening_History.csv
+data/raw/MP3-Example
 
 # But keep DVC files
-!*.dvc
+!data/**/*.dvc
 
 # Mac OS-specific storage files
 .DS_Store
