@@ -198,7 +198,6 @@ now for this pulling we create ec2 instance on AWS:
 
 
 
-
 pull docker img -> run app on single EC2(docker install,pull img from ECR, container runn, live app)
 
 code deploy : blue green deployment
