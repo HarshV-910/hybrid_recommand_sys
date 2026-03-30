@@ -1,6 +1,6 @@
 import requests
 import time
-
+# to test that is streamlit app opening or not
 app_url = "http://localhost:8000"
 
 def get_status(url):

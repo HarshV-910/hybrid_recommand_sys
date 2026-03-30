@@ -174,6 +174,30 @@ extra command(avoid version conflict):{
 
 CD :
 all code -> docker img -> streamlit app on AWS ECR
+to create docker image: {
+  docker build -t hybrid_sys:test . <!-- to build img -->
+  docker run --name hybrid_sys -d -p 8000:8000 hybrid_sys:test <!--to run img-->
+  docker ps <!-- to check running container -->
+  docker stop <container_id> <!-- to Stop a running container ( -->
+  docker image -a <!-- to show all images -->
+  docker rmi <img_id> <!-- to Delete an image -->
+}
+
+check streamlit app on localhost:8000
+then create ECR at AWS like "hybrid_sys_ecr"
+then open that ecr and use push commands and use in ci.yaml file
+now use commands of ecr for checking{
+  first command: for login same 
+  last command: of push but change push->pull
+  then copy name of img by docker image -a
+  then docker run command given above: docker run --name hybrid_sys_ecr -d -p 8000:8000 <copied_name with tag latest>
+  now check localhost:8000 for streamlit app
+}
+
+now for this pulling we create ec2 instance on AWS:
+
+
+
 
 pull docker img -> run app on single EC2(docker install,pull img from ECR, container runn, live app)
 

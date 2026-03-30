@@ -6,6 +6,8 @@ jobs:
   CI:
     runs-on: ubuntu-latest
     steps:
+
+# basic env creation
       - name: code checkout
         uses: actions/checkout@v4
 
@@ -14,6 +16,8 @@ jobs:
         with:
           python-version: '3.10'
           cache: 'pip'
+
+# requirements installation and testing          
 
       - name: Cache pip dependencies
         uses: actions/cache@v3
@@ -28,6 +32,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+# AWS login for S3 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -35,13 +40,14 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ap-southeast-2
 
+# dvc data pull and testing app
+
       - name: DVC pull
         run: dvc pull
 
       - name: Run Application
         run: |
           nohup streamlit run app.py --server.port 8000 & sleep 30
-
         
       - name: Test App
         run: |
@@ -50,4 +56,43 @@ jobs:
       - name: Stop Application
         run: |
           pkill -f "streamlit run"
+
+# AWS login for ECR and pushing docker image
     
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-southeast-2
+
+########################################
+      # - name: Login to AWS ECR
+      #   id: login-ecr
+      #   uses: aws-actions/amazon-ecr-login@v2
+
+      # - name: Build, tag and Push Docker Image to ECR
+      #   env:
+      #     REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+      #     REPOSITORY: ${{ secrets.ECR_REPOSITORY_URI}}
+      #     IMAGE_TAG: latest
+      #   run: |
+      #     docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+      #     docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+      
+      - name: Login to AWS ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, tag and Push Docker Image to ECR
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.login-ecr.outputs.registry }}/${{ secrets.ECR_REPOSITORY_URI }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+########################################
+
+# 
+          

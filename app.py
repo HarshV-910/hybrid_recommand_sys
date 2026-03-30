@@ -12,14 +12,13 @@ from src.features.hybrid_sys import HybridRecommender
 def load_data():
     transformed_data = load_npz('data/processed/df_transformed.npz')
     df_song = pd.read_csv('data/raw/Music_Info.csv')
-    df_user = pd.read_csv('data/raw/User_Listening_History.csv')
     filtered_song_df = pd.read_csv('data/processed/collab_filtered.csv')
     track_ids = np.load('models/track_ids.npy', allow_pickle=True)
     interaction_matrix = load_npz('data/processed/interaction_matrix.npz')
-    return transformed_data, df_song, df_user, filtered_song_df, track_ids, interaction_matrix
+    return transformed_data, df_song, filtered_song_df, track_ids, interaction_matrix
 
 # Load data once and cache it
-st.session_state.transformed_data, st.session_state.df_song, st.session_state.df_user, st.session_state.filtered_song_df, st.session_state.track_ids, st.session_state.interaction_matrix = load_data()
+st.session_state.transformed_data, st.session_state.df_song, st.session_state.filtered_song_df, st.session_state.track_ids, st.session_state.interaction_matrix = load_data()
 
 # song_names = joblib.load('models/song_names.joblib')
 
