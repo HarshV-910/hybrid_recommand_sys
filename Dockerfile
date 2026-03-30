@@ -41,9 +41,12 @@ CMD ["streamlit", "run", "app.py", "--server.port", "8000"]
 # ├── app.py
 # │
 # ├── src/
-# │   ├── ... (all your source code files)
+# │   ├── ... (your full source code)
 # │
 # ├── data/
+# │   ├── raw/
+# │   │   └── Music_Info.csv
+# │   │
 # │   └── processed/
 # │       ├── collab_filtered.csv
 # │       ├── interaction_matrix.npz
@@ -51,8 +54,8 @@ CMD ["streamlit", "run", "app.py", "--server.port", "8000"]
 # │       └── df_transformed.npz
 # │
 # ├── models/
-# │   ├── track_ids.joblib
+# │   ├── track_ids.npy
 # │   ├── song_names.joblib
 # │   └── transformer.joblib
 # │
-# └── (installed Python packages in system site-packages)
+# └── (Python packages installed globally)
