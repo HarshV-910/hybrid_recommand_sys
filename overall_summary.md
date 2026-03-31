@@ -189,7 +189,7 @@ then open that ecr and use push commands and use in ci.yaml file
 now use commands of ecr for checking{
   first command: for login same 
   last command: of push but change push->pull
-  then copy name of img by docker image -a
+  then copy name of img by: docker image ls -a
   then docker run command given above: docker run --name hybrid_sys_ecr -d -p 8000:8000 <copied_name with tag latest>
   now check localhost:8000 for streamlit app
 }

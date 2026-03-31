@@ -198,7 +198,8 @@ def main():
         song_names = df_song['name'].unique().tolist()
 
         col_to_clean = ['spotify_id','track_id','genre','name','spotify_preview_url']
-        df_cleaned = clean(df_song,col_to_clean)
+        # Clean a copy so app metadata columns remain available in df_song.
+        df_cleaned = clean(df_song.copy(), col_to_clean)
 
         freq_encode_col = ['year'] # range : 0 to 1
         ohe_cols = ['artist','time_signature','key']
