@@ -93,6 +93,7 @@ target/
 data/*
 !data/**/*.dvc
 !data/**/.gitkeep
+.venv/
 
 # DotEnv configuration
 .env

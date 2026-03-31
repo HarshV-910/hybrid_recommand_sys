@@ -212,6 +212,8 @@ def main():
 
         save_npz(os.path.join(processed_path, "df_transformed.npz"), df_transformed) # to save sparse matrix
         df_cleaned.to_csv(os.path.join(processed_path, "df_cleaned.csv"), index=False)
+        # Keep app-facing metadata file aligned with transformed matrix row order.
+        df_song.to_csv(os.path.join(processed_path, "Music_Info_app.csv"), index=False)
         joblib.dump(song_names, "models/song_names.joblib")
         logger.info(f"Cleaned & Transformed data saved to {processed_path}")
 

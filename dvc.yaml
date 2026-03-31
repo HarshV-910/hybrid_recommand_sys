@@ -13,6 +13,7 @@ stages:
     - data/processed/df_cleaned.csv
     - data/processed/df_transformed.npz
     - data/processed/interaction_matrix.npz
+    - data/processed/Music_Info_app.csv
     - models/song_names.joblib
     - models/track_ids.npy
     - models/transformer.joblib

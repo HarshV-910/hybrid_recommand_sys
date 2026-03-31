@@ -11,7 +11,7 @@ from src.features.hybrid_sys import HybridRecommender
 @st.cache_data
 def load_data():
     transformed_data = load_npz('data/processed/df_transformed.npz')
-    df_song = pd.read_csv('data/raw/Music_Info.csv')
+    df_song = pd.read_csv('data/processed/Music_Info_app.csv')
     filtered_song_df = pd.read_csv('data/processed/collab_filtered.csv')
     track_ids = np.load('models/track_ids.npy', allow_pickle=True)
     interaction_matrix = load_npz('data/processed/interaction_matrix.npz')

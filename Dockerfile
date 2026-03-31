@@ -18,6 +18,7 @@ COPY ./data/processed/collab_filtered.csv \
      ./data/processed/interaction_matrix.npz \
      ./data/processed/df_cleaned.csv \
      ./data/processed/df_transformed.npz \
+     ./data/processed/Music_Info_app.csv \
      ./data/processed/
 
 COPY ./models/track_ids.npy \
@@ -25,7 +26,7 @@ COPY ./models/track_ids.npy \
      ./models/transformer.joblib \
      ./models/
 
-COPY ./data/raw/Music_Info.csv ./data/raw/
+# COPY ./data/raw/Music_Info.csv ./data/raw/
 
 COPY app.py .
 COPY ./src/ /app/src/

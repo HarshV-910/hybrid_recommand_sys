@@ -1,4 +1,5 @@
 pandas
+category-encoders
 scikit-learn
 dvc[s3]
 mlflow

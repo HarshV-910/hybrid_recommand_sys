@@ -45,17 +45,6 @@ jobs:
       - name: DVC pull
         run: dvc pull
       
-      - name: Debug files
-        run: |
-          ls -R
-
-      - name: Verify data files exist
-        run: |
-          if [ ! -f data/raw/Music_Info.csv ]; then
-            echo "Music_Info.csv not found after DVC pull"
-            exit 1
-          fi
-
 
 ########################################
       # - name: Run Application
