@@ -90,7 +90,9 @@ target/
 /models/
 /keys.txt
 /reports
-/data/
+data/*
+!data/**/*.dvc
+!data/**/.gitkeep
 
 # DotEnv configuration
 .env
