@@ -194,6 +194,7 @@ now use commands of ecr for checking{
   now check localhost:8000 for streamlit app
 }
 
+
 now for this pulling we create ec2 instance on AWS:
 
 
