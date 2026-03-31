@@ -44,6 +44,10 @@ jobs:
 
       - name: DVC pull
         run: dvc pull
+      
+      - name: Debug files
+        run: |
+          ls -R
 
       - name: Verify data files exist
         run: |
