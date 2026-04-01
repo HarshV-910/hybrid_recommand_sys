@@ -8,20 +8,36 @@ from src.features.collaborative_sys import collaborative_recommand
 from src.features.hybrid_sys import HybridRecommender
 
 @st.cache_data
-def load_data():
-    transformed_data = load_npz('data/processed/df_transformed.npz')
-    df_song = pd.read_csv('data/processed/Music_Info_app.csv')
+def load_metadata():
+    df_song = pd.read_csv('data/processed/Music_Info_app.csv',usecols=['track_id', 'name', 'artist', 'spotify_preview_url'])
     track_ids = np.load('models/track_ids.npy', allow_pickle=True)
     collab_filtered = df_song[df_song['track_id'].isin(track_ids)]
-    collab_filtered.reset_index(drop=True,inplace=True)
-    # filtered_song_df = pd.read_csv('data/processed/collab_filtered.csv')
+    collab_filtered.reset_index(drop=True, inplace=True)
+    return df_song, collab_filtered, track_ids
+
+@st.cache_resource
+def load_heavy_data():
+    transformed_data = load_npz('data/processed/df_transformed.npz')
     interaction_matrix = load_npz('data/processed/interaction_matrix.npz')
-    return transformed_data, df_song, collab_filtered, track_ids, interaction_matrix
+    interaction_matrix = interaction_matrix.tocsr() 
+    return transformed_data, interaction_matrix
 
-# Load data once and cache it
-st.session_state.transformed_data, st.session_state.df_song, st.session_state.filtered_song_df, st.session_state.track_ids, st.session_state.interaction_matrix = load_data()
+st.session_state.df_song, st.session_state.filtered_song_df, st.session_state.track_ids = load_metadata()
 
-# song_names = joblib.load('models/song_names.joblib')
+# @st.cache_data
+# def load_data():
+#     transformed_data = load_npz('data/processed/df_transformed.npz')
+#     df_song = pd.read_csv('data/processed/Music_Info_app.csv')
+#     track_ids = np.load('models/track_ids.npy', allow_pickle=True)
+#     collab_filtered = df_song[df_song['track_id'].isin(track_ids)]
+#     collab_filtered.reset_index(drop=True,inplace=True)
+#     # filtered_song_df = pd.read_csv('data/processed/collab_filtered.csv')
+#     interaction_matrix = load_npz('data/processed/interaction_matrix.npz')
+#     return transformed_data, df_song, collab_filtered, track_ids, interaction_matrix
+
+# # Load data once and cache it
+# st.session_state.transformed_data, st.session_state.df_song, st.session_state.filtered_song_df, st.session_state.track_ids, st.session_state.interaction_matrix = load_data()
+
 
 st.title("Music Recommendation System")
 st.write("#### Welcome to the Music Recommendation System! Please enter your preferences to get personalized music recommendations.")
@@ -38,25 +54,56 @@ diversity_slider = st.slider('Adjust diversity (0.0 = more similar, 1.0 = more d
 weight_content = 1 - diversity_slider
 weight_collaborative = diversity_slider
 
-# recommandation_type = st.selectbox('Select recommendation type', ['Content-Based', 'Collaborative-Based', 'Hybrid'], index=2)
 # song: just the way you are -> not in userdata but in songdata
 if ((st.session_state.filtered_song_df['name'] == song_name) & (st.session_state.filtered_song_df['artist'] == artist_name)).any():
     recommandation_type = st.selectbox('Select recommendation type', ['Content-Based', 'Collaborative-Based', 'Hybrid'], index=2)
 else:
     recommandation_type = st.selectbox('Select recommendation type', ['Content-Based'])
 
-# Get recommendations
+# # Get recommendations
+# if st.button('Get Recommendations'):
+#     try:
+#         if recommandation_type == 'Collaborative-Based':
+#             recommendations = collaborative_recommand(song_name,artist_name,st.session_state.track_ids,st.session_state.df_song, st.session_state.interaction_matrix, k)
+#         elif recommandation_type == 'Hybrid':
+#             # Use full song corpus for content similarity and align with track_ids for collaborative mixing
+#             hybrid_recommender = HybridRecommender(song_name, artist_name, st.session_state.df_song, st.session_state.transformed_data, st.session_state.track_ids, st.session_state.interaction_matrix, weight_collaborative, k, weight_content)
+#             recommendations = hybrid_recommender.get_recommendations()
+#         else:
+#             recommendations = content_based_recommand(song_name, st.session_state.df_song, st.session_state.transformed_data, k)
 if st.button('Get Recommendations'):
     try:
+        transformed_data, interaction_matrix = load_heavy_data()
+
         if recommandation_type == 'Collaborative-Based':
-            recommendations = collaborative_recommand(song_name,artist_name,st.session_state.track_ids,st.session_state.df_song, st.session_state.interaction_matrix, k)
+            recommendations = collaborative_recommand(
+                song_name, artist_name,
+                st.session_state.track_ids,
+                st.session_state.df_song,
+                interaction_matrix,
+                k
+            )
+
         elif recommandation_type == 'Hybrid':
-            # Use full song corpus for content similarity and align with track_ids for collaborative mixing
-            hybrid_recommender = HybridRecommender(song_name, artist_name, st.session_state.df_song, st.session_state.transformed_data, st.session_state.track_ids, st.session_state.interaction_matrix, weight_collaborative, k, weight_content)
+            hybrid_recommender = HybridRecommender(
+                song_name, artist_name,
+                st.session_state.df_song,
+                transformed_data,
+                st.session_state.track_ids,
+                interaction_matrix,
+                weight_collaborative,
+                k,
+                weight_content
+            )
             recommendations = hybrid_recommender.get_recommendations()
+
         else:
-            recommendations = content_based_recommand(song_name, st.session_state.df_song, st.session_state.transformed_data, k)
-        # st.write(recommendations)
+            recommendations = content_based_recommand(
+                song_name,
+                st.session_state.df_song,
+                transformed_data,
+                k
+            )
         st.write("#### Recommended Songs:")
         
         for idx, rec in recommendations.iterrows():

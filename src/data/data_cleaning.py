@@ -116,12 +116,14 @@ def transform_data(df,freq_encode_col,ohe_cols,tfidf_col,standard_encode_col,min
 
 def create_interaction_matrix(df:dd.DataFrame, track_ids) -> csr_matrix:
     logger.info("Starting interaction matrix creation.")
+
     # if Dask DF, convert to pandas to avoid partial aggregation/categorial matrix issues
     if isinstance(df, dd.DataFrame):
         df = df.compute()
 
     # ensure playcount is numeric
-    df['playcount'] = df['playcount'].astype(np.float64)
+    # df['playcount'] = df['playcount'].astype(np.float64)
+    df['playcount'] = df['playcount'].astype(np.float32)
 
     # limit to non-zero playcount rows (if any)
     df = df[df['playcount'] > 0]
@@ -139,11 +141,15 @@ def create_interaction_matrix(df:dd.DataFrame, track_ids) -> csr_matrix:
 
     interaction_array = df.groupby(['track_idx', 'user_idx'])['playcount'].sum().reset_index()
 
-    row_indices = interaction_array['track_idx'].astype(np.int64).values
-    col_indices = interaction_array['user_idx'].astype(np.int64).values
-    values = interaction_array['playcount'].astype(np.float64).values
+    # row_indices = interaction_array['track_idx'].astype(np.int64).values
+    # col_indices = interaction_array['user_idx'].astype(np.int64).values
+    # values = interaction_array['playcount'].astype(np.float64).values
+    row_indices = interaction_array['track_idx'].astype(np.int32).values
+    col_indices = interaction_array['user_idx'].astype(np.int32).values
+    values = interaction_array['playcount'].astype(np.float32).values
 
-    sparse_matrix = csr_matrix((values, (row_indices, col_indices)), shape=(len(track_ids), len(user_ids)))
+    # sparse_matrix = csr_matrix((values, (row_indices, col_indices)), shape=(len(track_ids), len(user_ids)))
+    sparse_matrix = csr_matrix((values, (row_indices, col_indices)), shape=(len(track_ids), len(user_ids)), dtype=np.float32)
     save_npz('data/processed/interaction_matrix.npz', sparse_matrix)
 
     logger.info("Interaction matrix created successfully.")

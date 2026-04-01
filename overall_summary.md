@@ -177,7 +177,7 @@ all code -> docker img -> streamlit app on AWS ECR
 to create docker image: {
   docker build -t hybrid_sys:test . <!-- to build img -->
   docker run --name hybrid_sys -d -p 8000:8000 hybrid_sys:test <!--to run img-->
-  
+
   docker ps <!-- to check running container -->
   docker stop <container_id> <!-- to Stop a running container ( -->
   docker image -a <!-- to show all images -->
@@ -219,7 +219,7 @@ now for this pulling we create ec2 instance on AWS:
 - authenticate by aws configure:{
   aws configure
 }
-- connect docker with ecr{
+- connect docker with ecr & pull & run: {
   aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com
 
   docker pull 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com/hybrid_sys_ecr:latest
@@ -227,8 +227,7 @@ now for this pulling we create ec2 instance on AWS:
   docker run --name hybrid_sys_ecr -d -p 8000:8000 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com/hybrid_sys_ecr:latest
 
 }
-- pull img
-- run the container
+
 problem: streamlit not compatible with EC2, songs preview is https and we run on http,  
 
 
