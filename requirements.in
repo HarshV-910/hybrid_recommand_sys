@@ -1,14 +1,15 @@
 pandas
 category-encoders
 scikit-learn
+scipy
 dvc[s3]
 mlflow
 streamlit
 fastapi
 uvicorn
 awscli
-dvc
 dask[complete]
 numpy
 joblib
 pytest
+requests

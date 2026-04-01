@@ -165,7 +165,7 @@ commands:{
   git add/commit/push
 }
 
-extra command(avoid version conflict):{
+to create requirements.txt without version coflict then first create requirements.in and add there basic names of lib and now run this(takes time):{
   pip install pip-tools
   touch requirements.in -> add libraries names in this file
   pip-compile requirements.in
@@ -177,6 +177,7 @@ all code -> docker img -> streamlit app on AWS ECR
 to create docker image: {
   docker build -t hybrid_sys:test . <!-- to build img -->
   docker run --name hybrid_sys -d -p 8000:8000 hybrid_sys:test <!--to run img-->
+  
   docker ps <!-- to check running container -->
   docker stop <container_id> <!-- to Stop a running container ( -->
   docker image -a <!-- to show all images -->
@@ -196,6 +197,39 @@ now use commands of ecr for checking{
 
 
 now for this pulling we create ec2 instance on AWS:
+- create role: (create role with EC2 permissions,policy:AmazonEC2ContainerRegistryFullAccess,name:ec2_ecr_role,)
+- launch EC2: (create instance,name:ec2_ecr_instance,server:ubantu,keypair,security_grp:add all TCP,advance:add role:ec2_ecr_role)
+- install docker on it:{
+  sudo apt-get update -y
+  sudo apt-get install -y docker.io
+  sudo systemctl start docker
+  sudo systemctl enable docker
+  sudo usermod -aG docker ubuntu
+}
+- install awscli:{
+  sudo apt-get install -y unzip curl
+  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/home/ubuntu/awscliv2.zip"
+  unzip -o /home/ubuntu/awscliv2.zip -d /home/ubuntu/
+  sudo /home/ubuntu/aws/install
+
+  rm -rf /home/ubuntu/awscliv2.zip /home/ubuntu/aws
+  sudo systemctl status docker
+  newgrp docker
+}
+- authenticate by aws configure:{
+  aws configure
+}
+- connect docker with ecr{
+  aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com
+
+  docker pull 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com/hybrid_sys_ecr:latest
+
+  docker run --name hybrid_sys_ecr -d -p 8000:8000 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com/hybrid_sys_ecr:latest
+
+}
+- pull img
+- run the container
+problem: streamlit not compatible with EC2, songs preview is https and we run on http,  
 
 
 pull docker img -> run app on single EC2(docker install,pull img from ECR, container runn, live app)
@@ -203,3 +237,4 @@ pull docker img -> run app on single EC2(docker install,pull img from ECR, conta
 code deploy : blue green deployment
 1. Auto Scaling Group by launch template (2 to 5 EC2) -> code deployment application -> deployment grp -> start deployment
 2. some change in streamlit app
+

@@ -1,30 +1,23 @@
-# Use official Python base image
-FROM python:3.10
+# Use a smaller Python base image to reduce final image size.
+FROM python:3.10-slim
 
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1 \
+     PYTHONUNBUFFERED=1 \
+     PIP_NO_CACHE_DIR=1
 
 # Set working directory inside the container
 WORKDIR /app/
 
-# Copy requirements and install dependencies
+# Copy requirements and install dependencies in one layer.
 COPY requirements.txt .
+RUN pip install --upgrade pip && \
+     pip install --default-timeout=300 -r requirements.txt
 
-RUN pip install --upgrade pip
-RUN pip install --default-timeout=300 -r requirements.txt
+COPY ./data/processed/interaction_matrix.npz ./data/processed/
+COPY ./data/processed/Music_Info_app.csv ./data/processed/
+COPY ./data/processed/df_transformed.npz ./data/processed/
 
-COPY ./data/processed/collab_filtered.csv \
-     ./data/processed/interaction_matrix.npz \
-     ./data/processed/df_cleaned.csv \
-     ./data/processed/df_transformed.npz \
-     ./data/processed/Music_Info_app.csv \
-     ./data/processed/
-
-COPY ./models/track_ids.npy \
-     ./models/song_names.joblib \
-     ./models/transformer.joblib \
-     ./models/
+COPY ./models/track_ids.npy ./models/
 
 # COPY ./data/raw/Music_Info.csv ./data/raw/
 
@@ -33,7 +26,7 @@ COPY ./src/ /app/src/
 
 EXPOSE 8000
 
-CMD ["streamlit", "run", "app.py", "--server.port", "8000"]
+CMD ["streamlit", "run", "app.py", "--server.port", "8000", "--server.address", "0.0.0.0"]
 
 
 # file structure will looks like:
@@ -50,14 +43,11 @@ CMD ["streamlit", "run", "app.py", "--server.port", "8000"]
 # │   │   └── Music_Info.csv
 # │   │
 # │   └── processed/
-# │       ├── collab_filtered.csv
 # │       ├── interaction_matrix.npz
-# │       ├── df_cleaned.csv
+# │       ├── Music_Info_app.csv
 # │       └── df_transformed.npz
 # │
 # ├── models/
-# │   ├── track_ids.npy
-# │   ├── song_names.joblib
-# │   └── transformer.joblib
+# │   └── track_ids.npy
 # │
 # └── (Python packages installed globally)

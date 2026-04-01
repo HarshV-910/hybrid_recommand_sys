@@ -1,0 +1,24 @@
+# Local virtual environment
+hrs_env/
+
+# VCS and metadata
+.git/
+.gitignore
+
+# Python caches and test caches
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Notebook and reports artifacts
+notebooks/
+reports/
+
+# Raw dataset and large media assets not needed in runtime image
+data/raw/
+
+# DVC metadata and logs not needed in runtime image
+*.dvc
+.dvc/
+
+# Keep processed files and models if explicitly copied by Dockerfile

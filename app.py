@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from numpy import load
-import joblib
 from scipy.sparse import load_npz
 from src.features.content_sys import content_based_recommand
 from src.features.collaborative_sys import collaborative_recommand
@@ -12,10 +11,12 @@ from src.features.hybrid_sys import HybridRecommender
 def load_data():
     transformed_data = load_npz('data/processed/df_transformed.npz')
     df_song = pd.read_csv('data/processed/Music_Info_app.csv')
-    filtered_song_df = pd.read_csv('data/processed/collab_filtered.csv')
     track_ids = np.load('models/track_ids.npy', allow_pickle=True)
+    collab_filtered = df_song[df_song['track_id'].isin(track_ids)]
+    collab_filtered.reset_index(drop=True,inplace=True)
+    # filtered_song_df = pd.read_csv('data/processed/collab_filtered.csv')
     interaction_matrix = load_npz('data/processed/interaction_matrix.npz')
-    return transformed_data, df_song, filtered_song_df, track_ids, interaction_matrix
+    return transformed_data, df_song, collab_filtered, track_ids, interaction_matrix
 
 # Load data once and cache it
 st.session_state.transformed_data, st.session_state.df_song, st.session_state.filtered_song_df, st.session_state.track_ids, st.session_state.interaction_matrix = load_data()
@@ -76,8 +77,6 @@ if st.button('Get Recommendations'):
         st.error(f"Error generating recommendations: {e}")
 
 # Background styling
-# yt_api_key = AIzaSyD9_E7Lekg7HjneleI287bpWWxMdTgf5Gw
-# st.set_page_config(layout="wide")
 b1 = "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
 b2 = "https://images.unsplash.com/photo-1563832528262-15e2bca87584?q=80&w=2019&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
 
