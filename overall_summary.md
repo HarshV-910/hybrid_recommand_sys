@@ -173,7 +173,7 @@ to create requirements.txt without version coflict then first create requirement
 }
 
 CD :
-all code -> docker img -> streamlit app on AWS ECR
+all code -> docker img -> push on AWS ECR
 to create docker image: {
   docker build -t hybrid_sys:test . <!-- to build img -->
   docker run --name hybrid_sys -d -p 8000:8000 hybrid_sys:test <!--to run img-->
@@ -215,17 +215,22 @@ now for this pulling we create ec2 instance on AWS:
   rm -rf /home/ubuntu/awscliv2.zip /home/ubuntu/aws
   sudo systemctl status docker
   newgrp docker
+  sudo fallocate -l 2G /swapfile
+  sudo chmod 600 /swapfile
+  sudo mkswap /swapfile
+  sudo swapon /swapfile
 }
+
 - authenticate by aws configure:{
   aws configure
 }
+
 - connect docker with ecr & pull & run: {
   aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com
 
   docker pull 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com/hybrid_sys_ecr:latest
 
   docker run --name hybrid_sys_ecr -d -p 8000:8000 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com/hybrid_sys_ecr:latest
-
 }
 
 problem: streamlit not compatible with EC2, songs preview is https and we run on http,  
@@ -234,6 +239,27 @@ problem: streamlit not compatible with EC2, songs preview is https and we run on
 pull docker img -> run app on single EC2(docker install,pull img from ECR, container runn, live app)
 
 code deploy : blue green deployment
-1. Auto Scaling Group by launch template (2 to 5 EC2) -> code deployment application -> deployment grp -> start deployment
+1. Auto Scaling Group by launch template (2 to 5 EC2) -> code deployment application -> deployment grp -> start deployment{
+- create hybrid_sys_ec2_codedeploy_role and give permission:s3readonly,ecrcontainerfullaccess,codedeploy
+- create launch template:name:hybrid_sys_template, os:ubuntu,instance_type:t2.micro,key_pair:hybrid_sys_keypair,security_grp:launch-wizard-4, advnce:role:hybrid_sys_ec2_codedeploy_role, user_data(script to install codedeploy agent on each machine):{#!/bin/bash
+sudo apt update -y
+sudo apt install ruby-full -y
+sudo apt install wget -y
+cd /home/ubuntu
+wget https://aws-codedeploy-ap-southeast-2.s3.ap-southeast-2.amazonaws.com/latest/install
+chmod +x ./install
+sudo ./install auto
+sudo systemctl start codedeploy-agent}
+
+- create auto-scaling-grp:{name:hybrid_sys_asg,template:hybrid_sys_template,availability_zone:ap-southeast-2a & ap-southeast-2b,load_balancer:attach_a_new_balancer,load_balancer_name:hybrid-sys-elb,scheme:internet_facing,target_grp:new:hybrid-sys-tg1,health_check:elb health check, max:3,target_tracking_policy:avg. cpu utilization on 50%,additional:metrics collection within CloudWatch}
+
+- create service role for deployment group: usecase:codedeploy, name:hybrid_sys_codedeploy_service_role 
+
+- code_deploy:create application:{name:hybrid_sys_app,compute:ec2, create deployment grp: hybrid_sys_deployment_grp,role:hybrid_sys_codedeploy_service_role,type:blue-green,selectasg:hybrid_sys_asg,load-balancer:application load balancer:hybrid-sys-tg1,} 
+
+- create deployment s3 bucket: name:hybrid-sys-deployment-bkt
+
+- write appspec.yml
+}
 2. some change in streamlit app
 
