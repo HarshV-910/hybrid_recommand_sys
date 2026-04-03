@@ -182,6 +182,7 @@ to create docker image: {
   docker stop <container_id> <!-- to Stop a running container ( -->
   docker image -a <!-- to show all images -->
   docker rmi <img_id> <!-- to Delete an image -->
+  docker container prune -y <!-- to Delete all exited container -->
 }
 
 check streamlit app on localhost:8000
@@ -240,8 +241,10 @@ pull docker img -> run app on single EC2(docker install,pull img from ECR, conta
 
 code deploy : blue green deployment
 1. Auto Scaling Group by launch template (2 to 5 EC2) -> code deployment application -> deployment grp -> start deployment{
+
 - create hybrid_sys_ec2_codedeploy_role and give permission:s3readonly,ecrcontainerfullaccess,codedeploy
-- create launch template:name:hybrid_sys_template, os:ubuntu,instance_type:t2.micro,key_pair:hybrid_sys_keypair,security_grp:launch-wizard-4, advnce:role:hybrid_sys_ec2_codedeploy_role, user_data(script to install codedeploy agent on each machine):{#!/bin/bash
+
+- create launch template:name:hybrid_sys_template,version:latest, quickstart:os:ubuntu,instance_type:t2.micro,key_pair:hybrid_sys_keypair,security_grp:launch-wizard-4, advnce:role:hybrid_sys_ec2_codedeploy_role, user_data(script to install codedeploy agent on each machine):{#!/bin/bash
 sudo apt update -y
 sudo apt install ruby-full -y
 sudo apt install wget -y
@@ -251,11 +254,11 @@ chmod +x ./install
 sudo ./install auto
 sudo systemctl start codedeploy-agent}
 
-- create auto-scaling-grp:{name:hybrid_sys_asg,template:hybrid_sys_template,availability_zone:ap-southeast-2a & ap-southeast-2b,load_balancer:attach_a_new_balancer,load_balancer_name:hybrid-sys-elb,scheme:internet_facing,target_grp:new:hybrid-sys-tg1,health_check:elb health check, max:3,target_tracking_policy:avg. cpu utilization on 50%,additional:metrics collection within CloudWatch}
+- create auto-scaling-grp:{name:hybrid_sys_asg,template:hybrid_sys_template,availability_zone:ap-southeast-2a & ap-southeast-2b,load_balancer:attach_a_new_balancer,load_balancer_name:hybrid-sys-elb,scheme:internet_facing,port:80,target_grp:new:hybrid-sys-tg1,health_check:elb health check, max:3,target_tracking_policy:avg. cpu utilization on 50%,additional:metrics collection within CloudWatch}
 
 - create service role for deployment group: usecase:codedeploy, name:hybrid_sys_codedeploy_service_role 
 
-- code_deploy:create application:{name:hybrid_sys_app,compute:ec2, create deployment grp: hybrid_sys_deployment_grp,role:hybrid_sys_codedeploy_service_role,type:blue-green,selectasg:hybrid_sys_asg,load-balancer:application load balancer:hybrid-sys-tg1,} 
+- code_deploy:create application:{name:hybrid_sys_app,compute:ec2, create deployment grp: hybrid_sys_deployment_grp,role:hybrid_sys_codedeploy_service_role,type:inplace,selectasg:hybrid_sys_asg,load-balancer:application load balancer:hybrid-sys-tg1,} 
 
 - create deployment s3 bucket: name:hybrid-sys-deployment-bkt
 
