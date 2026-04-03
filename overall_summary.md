@@ -152,99 +152,149 @@ This flow ensures scalable, accurate recommendations by leveraging both song fea
 - Common metrics for evaluating recommendation systems are precision (how many recommended items are relevant) and recall (how many relevant items are recommended).
 - However, we don't use these here because we don't have labeled data (ground truth about what users actually like or dislike). Instead, we rely on the system's logic and user feedback for improvements.
 
-==================================================
-==================================================
+---
 
+## 7. CI / CD and Deployment Notes
 
-CI : (dvc pipeline -> github action runner -> test)
-s3.bucket for dvc remote, dvc push, 
-commands:{
-  aws configure
-  dvc remote add -d myremote s3://hybrid-recsys-remote-bkt
-  dvc push
-  git add/commit/push
-}
+### CI: DVC Pipeline -> GitHub Actions Runner -> Test
 
-to create requirements.txt without version coflict then first create requirements.in and add there basic names of lib and now run this(takes time):{
-  pip install pip-tools
-  touch requirements.in -> add libraries names in this file
-  pip-compile requirements.in
-  pip install -r requirements.txt
-}
+- Use S3 bucket for DVC remote and push artifacts.
 
-CD :
-all code -> docker img -> push on AWS ECR
-to create docker image: {
-  docker build -t hybrid_sys:test . <!-- to build img -->
-  docker run --name hybrid_sys -d -p 8000:8000 hybrid_sys:test <!--to run img-->
+Commands:
 
-  docker ps <!-- to check running container -->
-  docker stop <container_id> <!-- to Stop a running container ( -->
-  docker image -a <!-- to show all images -->
-  docker rmi <img_id> <!-- to Delete an image -->
-  docker container prune -y <!-- to Delete all exited container -->
-}
+```bash
+aws configure
+dvc remote add -d myremote s3://hybrid-recsys-remote-bkt
+dvc push
+git add/commit/push
+```
 
-check streamlit app on localhost:8000
-then create ECR at AWS like "hybrid_sys_ecr"
-then open that ecr and use push commands and use in ci.yaml file
-now use commands of ecr for checking{
-  first command: for login same 
-  last command: of push but change push->pull
-  then copy name of img by: docker image ls -a
-  then docker run command given above: docker run --name hybrid_sys_ecr -d -p 8000:8000 <copied_name with tag latest>
-  now check localhost:8000 for streamlit app
-}
+To create `requirements.txt` without version conflict, first create `requirements.in`, add basic library names, and then run this (takes time):
 
+```bash
+pip install pip-tools
+touch requirements.in  # add libraries names in this file
+pip-compile requirements.in
+pip install -r requirements.txt
+```
 
-now for this pulling we create ec2 instance on AWS:
-- create role: (create role with EC2 permissions,policy:AmazonEC2ContainerRegistryFullAccess,name:ec2_ecr_role,)
-- launch EC2: (create instance,name:ec2_ecr_instance,server:ubantu,keypair,security_grp:add all TCP,advance:add role:ec2_ecr_role)
-- install docker on it:{
-  sudo apt-get update -y
-  sudo apt-get install -y docker.io
-  sudo systemctl start docker
-  sudo systemctl enable docker
-  sudo usermod -aG docker ubuntu
-}
-- install awscli:{
-  sudo apt-get install -y unzip curl
-  curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/home/ubuntu/awscliv2.zip"
-  unzip -o /home/ubuntu/awscliv2.zip -d /home/ubuntu/
-  sudo /home/ubuntu/aws/install
+### CD
 
-  rm -rf /home/ubuntu/awscliv2.zip /home/ubuntu/aws
-  sudo systemctl status docker
-  newgrp docker
-  sudo fallocate -l 2G /swapfile
-  sudo chmod 600 /swapfile
-  sudo mkswap /swapfile
-  sudo swapon /swapfile
-}
+- Flow: all code -> docker img -> push on AWS ECR
 
-- authenticate by aws configure:{
-  aws configure
-}
+To create Docker image:
 
-- connect docker with ecr & pull & run: {
-  aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com
+```bash
+docker build -t hybrid_sys:test . # to build img
+docker run --name hybrid_sys -d -p 8000:8000 hybrid_sys:test # to run img
 
-  docker pull 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com/hybrid_sys_ecr:latest
+docker ps # to check running container
+docker stop <container_id> # to Stop a running container (
+docker image -a # to show all images
+docker rmi <img_id> # to Delete an image
+docker container prune -y # to Delete all exited container
+```
 
-  docker run --name hybrid_sys_ecr -d -p 8000:8000 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com/hybrid_sys_ecr:latest
-}
+Then:
 
-problem: streamlit not compatible with EC2, songs preview is https and we run on http,  
+- Check streamlit app on `localhost:8000`.
+- Create ECR at AWS, e.g., `hybrid_sys_ecr`.
+- Open that ECR and use push commands and use in `ci.yaml` file.
 
+Now use commands of ECR for checking:
 
-pull docker img -> run app on single EC2(docker install,pull img from ECR, container runn, live app)
+- First command: for login same.
+- Last command: of push but change `push -> pull`.
+- Then copy name of img by: `docker image ls -a`.
+- Then docker run command given above:
+  `docker run --name hybrid_sys_ecr -d -p 8000:8000 <copied_name with tag latest>`.
+- Now check `localhost:8000` for streamlit app.
 
-code deploy : blue green deployment
-1. Auto Scaling Group by launch template (2 to 5 EC2) -> code deployment application -> deployment grp -> start deployment{
+### Pulling on Single EC2 Instance
 
-- create hybrid_sys_ec2_codedeploy_role and give permission:s3readonly,ecrcontainerfullaccess,codedeploy
+Now for this pulling we create EC2 instance on AWS:
 
-- create launch template:name:hybrid_sys_template,version:latest, quickstart:os:ubuntu,instance_type:t2.micro,key_pair:hybrid_sys_keypair,security_grp:launch-wizard-4, advnce:role:hybrid_sys_ec2_codedeploy_role, user_data(script to install codedeploy agent on each machine):{#!/bin/bash
+1. Create role:
+   - Create role with EC2 permissions.
+   - Policy: `AmazonEC2ContainerRegistryFullAccess`.
+   - Name: `hybrid_sys_ec2_ecr_role`.
+
+2. Launch EC2:
+   - Create instance name: `hybrid_sys_ec2`.
+   - Server: ubantu.
+   - Instance type: `t2.micro`.
+   - keypair.
+   - security_grp: add all TCP. like launch wizard-4
+   - advance: add role: `hybrid_sys_ec2_ecr_role`.
+
+3. Install Docker on it:
+
+```bash
+sudo apt-get update -y
+sudo apt-get install -y docker.io
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker ubuntu
+```
+
+4. Install awscli:
+
+```bash
+sudo apt-get install -y unzip curl
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/home/ubuntu/awscliv2.zip"
+unzip -o /home/ubuntu/awscliv2.zip -d /home/ubuntu/
+sudo /home/ubuntu/aws/install
+
+rm -rf /home/ubuntu/awscliv2.zip /home/ubuntu/aws
+newgrp docker
+sudo fallocate -l 2G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile
+```
+
+5. Authenticate by aws configure:
+
+```bash
+aws configure
+```
+
+6. Connect docker with ecr & pull & run:
+
+```bash
+aws ecr get-login-password --region ap-southeast-2 | docker login --username AWS --password-stdin 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com
+
+docker pull 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com/hybrid_sys_ecr:latest
+
+docker run --name hybrid_sys_ecr -d -p 8000:8000 252312374343.dkr.ecr.ap-southeast-2.amazonaws.com/hybrid_sys_ecr:latest
+```
+
+Problem:
+
+- streamlit not compatible with EC2, songs preview is https and we run on http.
+
+Summary:
+
+- pull docker img -> run app on single EC2(docker install,pull img from ECR, container runn, live app)
+
+### CodeDeploy: Inplace Deployment
+
+1. Auto Scaling Group by launch template (1 to 3 EC2) -> code deployment application -> deployment grp -> start deployment.
+
+- create `hybrid_sys_ec2_codedeploy_role` and give permission: s3readonly, containerfullaccess, AWSCodeDeployFullAccess,AmazonEC2RoleforAWSCodeDeploy.
+
+- create launch template:
+  - name: `hybrid_sys_template`
+  - version: latest
+  - quickstart os: ubuntu
+  - instance_type: t2.micro
+  - key_pair: `hybrid_sys_keypair`
+  - security_grp: `launch-wizard-4`
+  - advnce role: `hybrid_sys_ec2_codedeploy_role`
+  - user_data (script to install codedeploy agent on each machine):
+
+```bash
+#!/bin/bash
 sudo apt update -y
 sudo apt install ruby-full -y
 sudo apt install wget -y
@@ -252,17 +302,38 @@ cd /home/ubuntu
 wget https://aws-codedeploy-ap-southeast-2.s3.ap-southeast-2.amazonaws.com/latest/install
 chmod +x ./install
 sudo ./install auto
-sudo systemctl start codedeploy-agent}
+sudo systemctl start codedeploy-agent
+```
 
-- create auto-scaling-grp:{name:hybrid_sys_asg,template:hybrid_sys_template,availability_zone:ap-southeast-2a & ap-southeast-2b,load_balancer:attach_a_new_balancer,load_balancer_name:hybrid-sys-elb,scheme:internet_facing,port:80,target_grp:new:hybrid-sys-tg1,health_check:elb health check, max:3,target_tracking_policy:avg. cpu utilization on 50%,additional:metrics collection within CloudWatch}
+- create auto-scaling-grp:
+  - name: `hybrid_sys_asg`
+  - template: `hybrid_sys_template`
+  - availability_zone: ap-southeast-2a & ap-southeast-2b
+  - load_balancer: attach_a_new_balancer
+  - load_balancer_name: `hybrid-sys-elb`
+  - scheme: internet_facing
+  - target_grp: new: `hybrid-sys-tg1`
+  - health_check: elb health check
+  - max: 3
+  - target_tracking_policy: avg. cpu utilization on 50%
+  - additional: metrics collection within CloudWatch
 
-- create service role for deployment group: usecase:codedeploy, name:hybrid_sys_codedeploy_service_role 
+- create service role for deployment group:
+  - usecase: codedeploy
+  - name: `hybrid_sys_codedeploy_service_role`
 
-- code_deploy:create application:{name:hybrid_sys_app,compute:ec2, create deployment grp: hybrid_sys_deployment_grp,role:hybrid_sys_codedeploy_service_role,type:inplace,selectasg:hybrid_sys_asg,load-balancer:application load balancer:hybrid-sys-tg1,} 
+- code_deploy create application:
+  - name: `hybrid_sys_app`
+  - compute: ec2
+  - create deployment grp: `hybrid_sys_deployment_grp`
+  - role: `hybrid_sys_codedeploy_service_role`
+  - type: Blue/Green
+  - selectasg: `hybrid_sys_asg`
+  - load-balancer: application load balancer: `hybrid-sys-tg1`
 
-- create deployment s3 bucket: name:hybrid-sys-deployment-bkt
+- create deployment s3 bucket: name: `hybrid-sys-deployment-bkt`
 
-- write appspec.yml
-}
+- write `appspec.yml`
+
 2. some change in streamlit app
 
